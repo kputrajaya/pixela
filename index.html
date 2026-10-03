@@ -1,325 +1,64 @@
-<html>
+<!doctype html>
+<html lang="en">
 
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pixela</title>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    font-family: 'Calibri', sans-serif;
-    color: #333;
-    box-sizing: border-box;
-  }
-
-  select {
-    padding: 3px 6px;
-    border: 1px solid #AAA;
-    border-radius: 4px;
-  }
-  input[type=file] {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  }
-
-  .container {
-    max-width: 1280px;
-    padding: 20px 0 0;
-    margin: 0 auto;
-  }
-  .row {
-    font-size: 0;
-  }
-  .col {
-    width: 100%;
-    margin-bottom: 20px;
-    padding: 0 20px;
-    font-size: 1rem;
-    display: inline-block;
-    vertical-align: top;
-  }
-  .btn {
-    padding: 5px 10px;
-    border: 1px solid #AAA;
-    border-radius: 4px;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    cursor: pointer;
-    display: inline-block;
-  }
-
-  .title {
-    font-size: 24px;
-    font-weight: 600;
-  }
-  .subtitle {
-    margin-bottom: 20px;
-    font-size: 16px;
-    font-weight: 400;
-    color: #888;
-  }
-  .control {
-    margin: 0 -10px;
-  }
-  .control-item {
-    margin: 0 10px 5px;
-    font-weight: 700;
-    display: inline-block;
-  }
-  .control-label {
-    margin-right: 3px;
-  }
-  .preview {
-    width: 100%;
-  }
-
-  #canvas {
-    cursor: pointer;
-  }
-
-  @media only screen and (min-width: 480px) {
-    .col.one {
-      width: 50%;
-    }
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixela</title>
+  <link rel="stylesheet" href="site.css">
 </head>
 
 <body>
-<div class="container">
-  <div class="row">
-    <div class="col two">
-      <h1 class="title">Pixela</h1>
-      <h2 class="subtitle">Convert your images to triangle-mosaics!</h2>
-      <div class="control">
-        <div class="control-item">
-          <label class="control-label" for="file">Image file:</label>
-          <input id="file" type="file" accept="image/jpeg"/>
-          <label class="btn" for="file">Choose file</label>
-        </div>
-        <div class="control-item">
-          <label class="control-label" for="count">Division count:</label>
-          <select id="count">
-            <option value="30">30</option>
-            <option value="50">50</option>
-            <option value="80">80</option>
-            <option value="130">130</option>
-            <option value="210">210</option>
-            <option value="340">340</option>
-            <option value="550" selected>550</option>
-            <option value="890">890</option>
-            <option value="1440">1440</option>
-            <option value="2330">2330</option>
-            <option value="3770">3770</option>
-            <option value="6100">6100</option>
-            <option value="9870">9870</option>
-          </select>
-        </div>
-        <div class="control-item">
-          <label class="control-label" for="type">Triangle per division:</label>
-          <select id="type">
-            <option value="2" selected>2</option>
-            <option value="4">4</option>
-          </select>
+  <div class="container">
+    <div class="row">
+      <div class="col two">
+        <h1 class="title">Pixela</h1>
+        <h2 class="subtitle">Convert your images to triangle-mosaics!</h2>
+        <div class="control">
+          <div class="control-item">
+            <label class="control-label" for="file">Image file:</label>
+            <input id="file" type="file" accept="image/*">
+            <label class="btn" for="file">Choose file</label>
+          </div>
+          <div class="control-item">
+            <label class="control-label" for="count">Division count:</label>
+            <select id="count">
+              <option value="30">30</option>
+              <option value="50">50</option>
+              <option value="80">80</option>
+              <option value="130">130</option>
+              <option value="210">210</option>
+              <option value="340">340</option>
+              <option value="550" selected>550</option>
+              <option value="890">890</option>
+              <option value="1440">1440</option>
+              <option value="2330">2330</option>
+              <option value="3770">3770</option>
+              <option value="6100">6100</option>
+              <option value="9870">9870</option>
+            </select>
+          </div>
+          <div class="control-item">
+            <label class="control-label" for="type">Triangle per division:</label>
+            <select id="type">
+              <option value="2" selected>2</option>
+              <option value="4">4</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col one">
-      <img id="image" class="preview"/>
+    <div class="row">
+      <div class="col one">
+        <img id="image" class="preview" alt="Original image preview" hidden>
+      </div>
+      <div class="col one">
+        <canvas id="canvas" class="preview" role="img" aria-label="Generated triangle mosaic preview" hidden></canvas>
+        <button id="download" class="btn" type="button" disabled hidden>Download</button>
+      </div>
     </div>
-    <div class="col one">
-      <canvas id="canvas" class="preview" height="0" title="Click to download"></canvas>
-    </div>
   </div>
-</div>
-
-<script>
-  (() => {
-    // Constants
-    const TARGET_DIMENSION = 2000;
-    const PROCESS_PIXEL_EVERY = 3;
-
-    // DOM Elements
-    const fileElm = document.getElementById('file');
-    const countElm = document.getElementById('count');
-    const typeElm = document.getElementById('type');
-    const imageElm = document.getElementById('image');
-    const canvasElm = document.getElementById('canvas');
-
-    // Variables
-    const ctx = canvasElm.getContext('2d');
-    const bufferCanvasElm = document.createElement('canvas');
-    const bufferCtx = bufferCanvasElm.getContext('2d');
-    const linkElm = document.createElement('a');
-
-    // Helpers
-    const getTypeMap = (divSize) => {
-      const getType = (x, y) => {
-        const xInverse = divSize - x - 1;
-        if (x === y && xInverse === y) return 'm';
-        if (x === y) return xInverse > y ? 'tl' : 'br';
-        if (xInverse === y) return x > y ? 'tr' : 'bl';
-        if (x > y) return xInverse > y ? 't' : 'r';
-        return xInverse > y ? 'l' : 'b';
-      };
-
-      const result = {};
-      for (let x = 0; x < divSize; x++) {
-        for (let y = 0; y < divSize; y++) {
-          const type = getType(x, y);
-          result[type] = result[type] || [];
-          result[type].push([x, y]);
-        }
-      }
-      return result;
-    };
-    const getDataIndex = (coordOffset, coord) => {
-      const x = coordOffset[0] + coord[0];
-      const y = coordOffset[1] + coord[1];
-      const indexR = (x + y * canvasElm.width) * 4;
-      const indexG = indexR + 1;
-      const indexB = indexG + 1;
-      const indexA = indexB + 1;
-      return [indexR, indexG, indexB, indexA];
-    }
-    const getColors = (imgData, coordOffset, coords) => {
-      // Optimize by not processing every pixel
-      return coords.filter((coord, index) => index % PROCESS_PIXEL_EVERY === 0).map((coord) => {
-        const index = getDataIndex(coordOffset, coord);
-        return [imgData.data[index[0]], imgData.data[index[1]], imgData.data[index[2]]];
-      });
-    };
-    const fillColor = (imgData, coordOffset, typeMap, colors) => {
-      for (const type in typeMap) {
-        const color = colors[type];
-        typeMap[type].forEach((coord) => {
-          const index = getDataIndex(coordOffset, coord);
-          imgData.data[index[0]] = color[0];
-          imgData.data[index[1]] = color[1];
-          imgData.data[index[2]] = color[2];
-          imgData.data[index[3]] = 255;
-        });
-      }
-    };
-    const avgColor = (colors) => colors
-      .reduce((acc, color) => {
-        acc[0] += color[0] ** 2;
-        acc[1] += color[1] ** 2;
-        acc[2] += color[2] ** 2;
-        return acc;
-      }, [0, 0, 0])
-      .map((value) => Math.sqrt(value / colors.length));
-    const distColor = (color1, color2) => Math.sqrt(
-      (color1[0] - color2[0]) ** 2 +
-      (color1[1] - color2[1]) ** 2 +
-      (color1[1] - color2[1]) ** 2);
-    const process = () => {
-      if (!imageElm.src) return;
-
-      // User options
-      const divCount = Math.floor(countElm.value);
-      const simplify = typeElm.value === '2';
-
-      // Image properties
-      const imgWidth = imageElm.naturalWidth;
-      const imgHeight = imageElm.naturalHeight;
-      const imgRatio = imgWidth / imgHeight;
-      const imgArea = imgWidth * imgHeight;
-
-      // Div dimensions
-      const oriDivSize = Math.floor(Math.sqrt(imgArea / divCount));
-      const divColCount = Math.floor(imgWidth / oriDivSize);
-      const divRowCount = Math.floor(imgHeight / oriDivSize);
-      const divSize = Math.floor(imgRatio > 1 ? (TARGET_DIMENSION / divColCount) : (TARGET_DIMENSION / divRowCount));
-
-      // Result properties
-      const resultWidth = divColCount * divSize;
-      const resultHeight = divRowCount * divSize;
-      const resultRatio = resultWidth / resultHeight;
-
-      // Scale into buffer canvas
-      const scale = resultRatio > imgRatio ? (resultWidth / imgWidth) : (resultHeight / imgHeight);
-      const imgScaledWidth = Math.floor(imgWidth * scale);
-      const imgScaledHeight = Math.floor(imgHeight * scale);
-      bufferCanvasElm.width = imgScaledWidth;
-      bufferCanvasElm.height = imgScaledHeight;
-      bufferCtx.drawImage(image, 0, 0, imgWidth, imgHeight, 0, 0, imgScaledWidth, imgScaledHeight);
-
-      // Crop into output canvas
-      const x = Math.floor((imgScaledWidth - resultWidth) / 2);
-      const y = Math.floor((imgScaledHeight - resultHeight) / 2);
-      canvasElm.width = resultWidth;
-      canvasElm.height = resultHeight;
-      ctx.drawImage(bufferCanvasElm, x, y, resultWidth, resultHeight, 0, 0, resultWidth, resultHeight);
-
-      // Get image data and type map
-      const imgData = ctx.getImageData(0, 0, resultWidth, resultHeight);
-      const typeMap = getTypeMap(divSize);
-
-      // Run through divisions
-      for (let i = 0; i < divColCount; i++) {
-        for (let j = 0; j < divRowCount; j++) {
-          const coordOffset = [i * divSize, j * divSize];
-
-          const colors = {
-            t: avgColor(getColors(imgData, coordOffset, typeMap.t)),
-            r: avgColor(getColors(imgData, coordOffset, typeMap.r)),
-            b: avgColor(getColors(imgData, coordOffset, typeMap.b)),
-            l: avgColor(getColors(imgData, coordOffset, typeMap.l))
-          };
-          colors.m = avgColor([colors.t, colors.r, colors.b, colors.l]);
-          colors.tr = avgColor([colors.t, colors.r]);
-          colors.tl = avgColor([colors.t, colors.l]);
-          colors.br = avgColor([colors.b, colors.r]);
-          colors.bl = avgColor([colors.b, colors.l]);
-
-          // From 4 to 2 triangles per div
-          if (simplify) {
-            const distanceTrBl = distColor(colors.tr, colors.bl);
-            const distanceTlBr = distColor(colors.tl, colors.br);
-            if (distanceTrBl < distanceTlBr) {
-              colors.t = colors.l = colors.tl;
-              colors.b = colors.r = colors.br;
-              colors.tr = colors.bl = colors.m;
-            } else {
-              colors.t = colors.r = colors.tr;
-              colors.b = colors.l = colors.bl;
-              colors.tl = colors.br = colors.m;
-            }
-          }
-
-          fillColor(imgData, coordOffset, typeMap, colors);
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-    };
-
-    // Events
-    fileElm.onchange = () => {
-      if (!fileElm.files || !fileElm.files[0]) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imageElm.src = e.target.result;
-      };
-      reader.readAsDataURL(fileElm.files[0]);
-    };
-    countElm.onchange = process;
-    typeElm.onchange = process;
-    imageElm.onload = process;
-    canvasElm.onclick = () => {
-      linkElm.href = canvasElm.toDataURL('image/jpeg');
-      linkElm.download = 'Pixela.jpg';
-      linkElm.click();
-    };
-  })();
-</script>
+  <script src="site.js"></script>
 </body>
 
 </html>
